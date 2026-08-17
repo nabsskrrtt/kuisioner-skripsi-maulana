@@ -586,6 +586,55 @@ app.get('/api/admin/export', async (req, res) => {
   });
 });
 
+// Export responses to CSV text file
+app.get('/api/admin/export-csv', async (req, res) => {
+  const token = req.query.token || (req.headers['authorization'] && req.headers['authorization'].split(' ')[1]);
+
+  if (!token) {
+    return res.status(401).json({ message: 'Token otorisasi diperlukan' });
+  }
+
+  jwt.verify(token, JWT_SECRET, async (err) => {
+    if (err) {
+      return res.status(403).json({ message: 'Token tidak valid' });
+    }
+
+    try {
+      const rows = await dbAll('SELECT * FROM responses ORDER BY created_at ASC');
+      if (rows.length === 0) {
+        return res.status(404).send('No data to export');
+      }
+
+      // Generate CSV string
+      const headers = Object.keys(rows[0]);
+      const csvRows = [];
+      csvRows.push(headers.join(','));
+
+      for (const row of rows) {
+        const values = headers.map(header => {
+          const val = row[header];
+          if (val === null || val === undefined) return '';
+          // Escape quotes and commas
+          const valStr = String(val).replace(/"/g, '""');
+          return valStr.includes(',') || valStr.includes('\n') || valStr.includes('"')
+            ? `"${valStr}"`
+            : valStr;
+        });
+        csvRows.push(values.join(','));
+      }
+
+      const csvContent = csvRows.join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=Data_Kuesioner_SPSS_Maulana.csv');
+      res.send(csvContent);
+    } catch (error) {
+      console.error('Error generating CSV download:', error);
+      res.status(500).json({ message: 'Terjadi kesalahan saat memproses ekspor CSV' });
+    }
+  });
+});
+
 // Start Server
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => {

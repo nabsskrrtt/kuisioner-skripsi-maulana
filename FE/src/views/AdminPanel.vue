@@ -11,6 +11,13 @@
         </div>
       </div>
       <div class="nav-actions">
+        <!-- Export Buttons in Header -->
+        <button @click="downloadExcel" class="btn btn-primary btn-sm" :disabled="exporting" style="box-shadow: none;">
+          📥 {{ exporting ? 'Proses...' : 'Ekspor Excel (SPSS)' }}
+        </button>
+        <button @click="downloadCSV" class="btn btn-secondary btn-sm" :disabled="exporting">
+          📄 Ekspor CSV Mentah
+        </button>
         <router-link to="/" class="btn btn-secondary btn-sm">Ke Kuesioner</router-link>
         <button @click="handleLogout" class="btn btn-danger btn-sm">Keluar</button>
       </div>
@@ -851,9 +858,12 @@
               </select>
             </div>
 
-            <!-- XLSX Export Button -->
+            <!-- Export Buttons -->
             <button @click="downloadExcel" class="btn btn-primary btn-sm btn-export" :disabled="exporting">
-              📥 {{ exporting ? 'Memproses Ekspor...' : 'Unduh Data SPSS (Excel)' }}
+              📥 {{ exporting ? 'Memproses...' : 'Unduh Data SPSS (Excel)' }}
+            </button>
+            <button @click="downloadCSV" class="btn btn-secondary btn-sm btn-export" :disabled="exporting" style="margin-left: 8px;">
+              📄 Unduh CSV Mentah
             </button>
           </div>
 
@@ -1186,6 +1196,26 @@ const downloadExcel = () => {
   const link = document.createElement('a');
   link.href = downloadUrl;
   link.setAttribute('download', 'Data_Kuesioner_SPSS_Maulana.xlsx');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  setTimeout(() => {
+    exporting.value = false;
+  }, 1000);
+};
+
+// Download CSV File directly from browser
+const downloadCSV = () => {
+  exporting.value = true;
+  const token = localStorage.getItem('admin_token');
+  
+  // Directly download file using anchor tag with token query parameter
+  const downloadUrl = `${API_BASE}/admin/export-csv?token=${token}`;
+  
+  const link = document.createElement('a');
+  link.href = downloadUrl;
+  link.setAttribute('download', 'Data_Kuesioner_SPSS_Maulana.csv');
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
