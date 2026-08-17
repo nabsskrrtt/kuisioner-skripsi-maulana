@@ -1,0 +1,316 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* HSL Colors - Japanese Pastel Theme */
+  --bg-primary: #f6f8fb;
+  --bg-secondary: #f0f4f8;
+  --card-bg: #ffffff;
+  
+  --sky-blue: #58a6ff;
+  --sky-blue-hover: #4796e6;
+  --sky-blue-light: #e8f3ff;
+  
+  --pastel-green: #e1f5fe;
+  --pastel-green-accent: #2e7d32;
+  --pastel-red: #ffebee;
+  --pastel-red-accent: #c62828;
+  --pastel-yellow: #fffde7;
+  --pastel-yellow-accent: #f57f17;
+  
+  --text-dark: #2c3e50;
+  --text-muted: #6a7b8c;
+  --border-color: #e2e8f0;
+  
+  /* Utilities */
+  --radius-lg: 24px;
+  --radius-md: 14px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 12px 24px -6px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.12);
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-dark);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#app {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+
+.animate-fade {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+/* Layout Utilities */
+.container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+/* Card Styling */
+.card {
+  background-color: var(--card-bg);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-md);
+  transition: var(--transition-smooth);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+/* Form Styling */
+.form-group {
+  margin-bottom: 24px;
+}
+
+.form-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-dark);
+  font-size: 1.05rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 14px 18px;
+  font-size: 1rem;
+  font-family: inherit;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background-color: #fcfdfe;
+  color: var(--text-dark);
+  transition: var(--transition-smooth);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--sky-blue);
+  box-shadow: 0 0 0 4px var(--sky-blue-light);
+  background-color: #fff;
+}
+
+/* Custom Radio & Checkbox Cards */
+.selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.selection-card {
+  position: relative;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  text-align: center;
+  cursor: pointer;
+  font-weight: 500;
+  transition: var(--transition-smooth);
+  background-color: #fff;
+  user-select: none;
+}
+
+.selection-card input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.selection-card:hover {
+  border-color: var(--sky-blue);
+  background-color: var(--sky-blue-light);
+}
+
+.selection-card.active {
+  border-color: var(--sky-blue);
+  background-color: var(--sky-blue-light);
+  color: var(--sky-blue-hover);
+  font-weight: 600;
+}
+
+/* Button Styling */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  font-family: inherit;
+  gap: 8px;
+}
+
+.btn-primary {
+  background-color: var(--sky-blue);
+  color: white;
+  box-shadow: 0 4px 12px rgba(88, 166, 255, 0.25);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--sky-blue-hover);
+  box-shadow: 0 6px 16px rgba(88, 166, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background-color: var(--bg-secondary);
+  color: var(--text-dark);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--border-color);
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Progress Tracker Wizard */
+.wizard-progress {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin-bottom: 32px;
+  max-width: 100%;
+}
+
+.wizard-progress::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background-color: var(--border-color);
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.wizard-progress-bar {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: 4px;
+  background-color: var(--sky-blue);
+  transform: translateY(-50%);
+  z-index: 1;
+  transition: width 0.3s ease;
+}
+
+.wizard-step-node {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #fff;
+  border: 3px solid var(--border-color);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  transition: var(--transition-smooth);
+}
+
+.wizard-step-node.active {
+  border-color: var(--sky-blue);
+  color: var(--sky-blue);
+  box-shadow: 0 0 0 4px var(--sky-blue-light);
+}
+
+.wizard-step-node.completed {
+  background-color: var(--sky-blue);
+  border-color: var(--sky-blue);
+  color: #fff;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--radius-sm);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Mobile Adjustments */
+@media (max-width: 600px) {
+  .card {
+    padding: 20px 16px;
+    border-radius: var(--radius-md);
+  }
+  
+  .container {
+    padding: 12px 8px;
+  }
+
+  .btn {
+    padding: 12px 20px;
+    width: 100%;
+  }
+
+  .wizard-progress {
+    margin-bottom: 24px;
+  }
+  
+  .wizard-step-node {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+}
