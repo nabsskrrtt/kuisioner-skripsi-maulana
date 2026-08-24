@@ -100,7 +100,7 @@ app.post('/api/kuesioner', async (req, res) => {
     let painSeverity = null;
     let painSeverityCat = -1;
 
-    if (isEligible === 1) {
+    if (data.has_back_pain !== undefined && data.has_back_pain !== null) {
       hasBackPain = parseInt(data.has_back_pain, 10);
 
       // If they have back pain, map details
