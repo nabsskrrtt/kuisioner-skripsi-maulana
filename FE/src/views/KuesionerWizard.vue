@@ -31,6 +31,7 @@
         Untuk keperluan pencatatan statistik eksklusi penelitian, kami tetap perlu mengirimkan profil dasar ini ke sistem database. Data Anda aman dan rahasia.
       </p>
       <div class="btn-group">
+        <button type="button" class="btn btn-secondary" @click="isDisqualified = false">Kembali</button>
         <button type="button" class="btn btn-primary" :disabled="submitting" @click="submitDisqualified">
           {{ submitting ? 'Mengirim data...' : 'Simpan Profil & Selesai' }}
         </button>
@@ -73,7 +74,7 @@
             </div>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && !form.parent_name.trim() }">
             <label class="form-label" for="parent_name">Nama Orang Tua / Wali <span class="required">*</span></label>
             <input 
               type="text" 
@@ -82,9 +83,12 @@
               v-model="form.parent_name" 
               placeholder="Tulis nama lengkap Anda"
             />
+            <p v-if="showValidationErrors && !form.parent_name.trim()" class="error-message">
+              ⚠️ Silakan isi nama lengkap orang tua/wali.
+            </p>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && !form.parent_student_name.trim() }">
             <label class="form-label" for="parent_student_name">Nama Anak / Siswa <span class="required">*</span></label>
             <input 
               type="text" 
@@ -93,20 +97,27 @@
               v-model="form.parent_student_name" 
               placeholder="Tulis nama lengkap putra/putri Anda"
             />
+            <p v-if="showValidationErrors && !form.parent_student_name.trim()" class="error-message">
+              ⚠️ Silakan isi nama anak/siswa.
+            </p>
           </div>
 
-          <SignaturePad 
-            v-model="form.parent_signature" 
-            label="Tanda Tangan Orang Tua / Wali" 
-          />
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && !form.parent_signature }">
+            <SignaturePad 
+              v-model="form.parent_signature" 
+              label="Tanda Tangan Orang Tua / Wali" 
+            />
+            <p v-if="showValidationErrors && !form.parent_signature" class="error-message">
+              ⚠️ Silakan berikan tanda tangan orang tua/wali.
+            </p>
+          </div>
 
           <div class="btn-group">
             <div></div> <!-- Space filler for flex alignment -->
             <button 
               type="button" 
               class="btn btn-primary" 
-              :disabled="!isStep1Valid" 
-              @click="nextStep"
+              @click="handleStep1Next"
             >
               Setuju & Lanjutkan
             </button>
@@ -131,7 +142,7 @@
             </div>
           </div>
 
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && !form.student_name.trim() }">
             <label class="form-label" for="student_name">Nama Lengkap Siswa <span class="required">*</span></label>
             <input 
               type="text" 
@@ -140,20 +151,27 @@
               v-model="form.student_name" 
               placeholder="Tulis nama lengkap resmi Anda"
             />
+            <p v-if="showValidationErrors && !form.student_name.trim()" class="error-message">
+              ⚠️ Silakan isi nama lengkap Anda (siswa).
+            </p>
           </div>
 
-          <SignaturePad 
-            v-model="form.student_signature" 
-            label="Tanda Tangan Siswa" 
-          />
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && !form.student_signature }">
+            <SignaturePad 
+              v-model="form.student_signature" 
+              label="Tanda Tangan Siswa" 
+            />
+            <p v-if="showValidationErrors && !form.student_signature" class="error-message">
+              ⚠️ Silakan berikan tanda tangan Anda (siswa).
+            </p>
+          </div>
 
           <div class="btn-group">
             <button type="button" class="btn btn-secondary" @click="prevStep">Kembali</button>
             <button 
               type="button" 
               class="btn btn-primary" 
-              :disabled="!isStep2Valid" 
-              @click="nextStep"
+              @click="handleStep2Next"
             >
               Setuju & Lanjutkan
             </button>
@@ -166,7 +184,7 @@
           <p class="step-desc">Silakan lengkapi profil dasar sekolah kamu untuk verifikasi kriteria penelitian.</p>
           
           <!-- Gender -->
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && form.gender === null }">
             <label class="form-label">Jenis Kelamin <span class="required">*</span></label>
             <div class="selection-grid">
               <label class="selection-card" :class="{ active: form.gender === 1 }">
@@ -176,10 +194,13 @@
                 <input type="radio" :value="2" v-model="form.gender" /> Perempuan
               </label>
             </div>
+            <p v-if="showValidationErrors && form.gender === null" class="error-message">
+              ⚠️ Silakan pilih jenis kelamin Anda.
+            </p>
           </div>
 
           <!-- Age -->
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && form.age === null }">
             <label class="form-label">Umur Responden <span class="required">*</span></label>
             <div class="selection-grid">
               <label class="selection-card" :class="{ active: form.age === 16 }">
@@ -195,10 +216,30 @@
                 <input type="radio" :value="99" v-model="form.age" /> Lainnya
               </label>
             </div>
+            <p v-if="showValidationErrors && form.age === null" class="error-message">
+              ⚠️ Silakan pilih umur Anda.
+            </p>
+          </div>
+
+          <!-- Custom Age input (only if Lainnya is selected) -->
+          <div v-if="form.age === 99" class="form-group animate-fade" :class="{ 'has-error': showValidationErrors && form.age === 99 && !form.custom_age }">
+            <label class="form-label" for="custom_age">Usia berapa? (Tahun) <span class="required">*</span></label>
+            <input 
+              type="number" 
+              id="custom_age" 
+              class="form-control" 
+              v-model="form.custom_age" 
+              placeholder="Contoh: 15 atau 19"
+              min="1"
+              max="100"
+            />
+            <p v-if="showValidationErrors && form.age === 99 && !form.custom_age" class="error-message">
+              ⚠️ Silakan masukkan usia Anda.
+            </p>
           </div>
 
           <!-- School Name -->
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && !form.school.trim() }">
             <label class="form-label" for="school">Nama Sekolah SMA <span class="required">*</span></label>
             <input 
               type="text" 
@@ -208,10 +249,13 @@
               placeholder="Contoh: SMAN 8 Jakarta"
             />
             <p class="input-tip">Tulis nama resmi SMA secara jelas, bukan singkatan gaul. Contoh: SMAN 8 Jakarta (BENAR), Smandel (SALAH).</p>
+            <p v-if="showValidationErrors && !form.school.trim()" class="error-message">
+              ⚠️ Silakan isi nama sekolah SMA Anda.
+            </p>
           </div>
 
           <!-- Class Grade -->
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && form.class_grade === null }">
             <label class="form-label">Tingkat Kelas <span class="required">*</span></label>
             <div class="selection-grid">
               <label class="selection-card" :class="{ active: form.class_grade === 1 }">
@@ -224,10 +268,13 @@
                 <input type="radio" :value="3" v-model="form.class_grade" /> 12 / Kelas 3
               </label>
             </div>
+            <p v-if="showValidationErrors && form.class_grade === null" class="error-message">
+              ⚠️ Silakan pilih tingkat kelas Anda.
+            </p>
           </div>
 
           <!-- Transfer Status -->
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && form.is_transfer === null }">
             <label class="form-label">Apakah kamu berstatus siswa pindahan di sekolah saat ini? <span class="required">*</span></label>
             <div class="selection-grid">
               <label class="selection-card" :class="{ active: form.is_transfer === 1 }">
@@ -237,20 +284,45 @@
                 <input type="radio" :value="0" v-model="form.is_transfer" /> Tidak
               </label>
             </div>
+            <p v-if="showValidationErrors && form.is_transfer === null" class="error-message">
+              ⚠️ Silakan pilih status transfer Anda.
+            </p>
           </div>
 
           <!-- Transfer Duration -->
-          <div v-if="form.is_transfer === 1" class="form-group animate-fade">
-            <label class="form-label" for="transfer_duration">Lama bersekolah di SMA saat ini (dalam tahun) <span class="required">*</span></label>
-            <input 
-              type="number" 
-              step="0.1" 
-              id="transfer_duration" 
-              class="form-control" 
-              v-model="form.transfer_duration" 
-              placeholder="Contoh: 0.5 untuk 6 bulan, 1 untuk 1 tahun"
-            />
-            <p class="input-tip">Masukkan lama studi Anda di sekolah ini. Minimal 0,5 tahun agar lolos skrining penelitian.</p>
+          <div v-if="form.is_transfer === 1" class="form-group animate-fade" :class="{ 'has-error': showValidationErrors && form.is_transfer === 1 && (form.transfer_duration === null || form.transfer_duration === '') }">
+            <label class="form-label">Sudah berapa lama sekolah di SMA saat ini? <span class="required">*</span></label>
+            <div class="duration-inputs">
+              <div class="duration-field">
+                <input 
+                  type="number" 
+                  id="transfer_years" 
+                  class="form-control" 
+                  v-model="form.transfer_years" 
+                  placeholder="0"
+                  min="0"
+                  @input="updateTransferDuration"
+                />
+                <span class="duration-unit">Tahun</span>
+              </div>
+              <div class="duration-field">
+                <input 
+                  type="number" 
+                  id="transfer_months" 
+                  class="form-control" 
+                  v-model="form.transfer_months" 
+                  placeholder="0"
+                  min="0"
+                  max="11"
+                  @input="updateTransferDuration"
+                />
+                <span class="duration-unit">Bulan</span>
+              </div>
+            </div>
+            <p v-if="showValidationErrors && form.is_transfer === 1 && (form.transfer_duration === null || form.transfer_duration === '')" class="error-message">
+              ⚠️ Silakan isi lama bersekolah Anda (tahun dan/atau bulan).
+            </p>
+            <p class="input-tip">Minimal bersekolah selama 6 bulan (atau 0.5 tahun) agar lolos kriteria inklusi penelitian.</p>
           </div>
 
           <div class="btn-group">
@@ -258,8 +330,7 @@
             <button 
               type="button" 
               class="btn btn-primary" 
-              :disabled="!isStep3Valid" 
-              @click="handleScreening"
+              @click="handleStep3Next"
             >
               Lanjutkan
             </button>
@@ -271,9 +342,9 @@
           <h3>Pertanyaan Utama</h3>
           <p class="step-desc">Silakan jawab dengan jujur sesuai pengalaman fisik Anda.</p>
 
-          <div class="form-group main-question-group">
+          <div class="form-group main-question-group" :class="{ 'has-error': showValidationErrors && form.has_back_pain === null }">
             <label class="form-label main-question-label">
-              Apakah kamu pernah mengalami nyeri punggung (Back Pain)? <span class="required">*</span>
+              Apakah kamu pernah mengalami nyeri atau sakit di area sekitar tulang belakang (Back Pain)? <span class="required">*</span>
             </label>
             <div class="selection-grid-large">
               <label class="selection-card-large" :class="{ active: form.has_back_pain === 1 }">
@@ -290,6 +361,9 @@
                 <span class="sub">Punggung saya sehat-sehat saja</span>
               </label>
             </div>
+            <p v-if="showValidationErrors && form.has_back_pain === null" class="error-message">
+              ⚠️ Silakan pilih apakah kamu pernah mengalami nyeri atau sakit di area sekitar tulang belakang (Back Pain).
+            </p>
           </div>
 
           <div class="btn-group">
@@ -297,10 +371,9 @@
             <button 
               type="button" 
               class="btn btn-primary" 
-              :disabled="form.has_back_pain === null" 
-              @click="handleBackPainBranch"
+              @click="handleStep4Next"
             >
-              {{ form.has_back_pain === 0 ? 'Kirim & Selesai' : 'Lanjutkan' }}
+              {{ form.has_back_pain === 0 ? 'Kirim Formulir' : 'Lanjutkan' }}
             </button>
           </div>
         </div>
@@ -311,7 +384,7 @@
           <p class="step-desc">Lengkapi informasi klinis terkait nyeri punggung yang Anda rasakan.</p>
 
           <!-- Pain Duration in 12 months -->
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && form.pain_duration === null }">
             <label class="form-label">
               Jika ya, apakah Back Pain yang kamu alami terjadi dalam rentang 12 bulan terakhir? <span class="required">*</span>
             </label>
@@ -333,10 +406,13 @@
                 <span>Tidak pernah nyeri punggung selama 12 bulan terakhir</span>
               </label>
             </div>
+            <p v-if="showValidationErrors && form.pain_duration === null" class="error-message">
+              ⚠️ Silakan pilih rentang waktu keluhan nyeri punggung Anda.
+            </p>
           </div>
 
           <!-- Pain Causes -->
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && !isStep5CausesValid }">
             <label class="form-label">Mengapa kamu bisa mengalami nyeri punggung? (bisa memilih lebih dari satu) <span class="required">*</span></label>
             <div class="checkbox-grid">
               <label class="checkbox-row" :class="{ checked: form.pain_causes.cedera }">
@@ -380,13 +456,21 @@
                 />
               </div>
             </div>
+            <p v-if="showValidationErrors && !isStep5CausesValid" class="error-message">
+              ⚠️ Silakan pilih setidaknya satu alasan penyebab nyeri punggung (serta lengkapi rincian detail jika mencentang 'Penyakit lain' atau 'Lainnya').
+            </p>
           </div>
 
           <!-- Interactive Spine Component -->
-          <InteractiveSpine v-model="form.pain_areas" />
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && !isStep5AreasValid }">
+            <InteractiveSpine v-model="form.pain_areas" />
+            <p v-if="showValidationErrors && !isStep5AreasValid" class="error-message">
+              ⚠️ Silakan pilih setidaknya satu area lokasi nyeri pada model tulang belakang di atas.
+            </p>
+          </div>
 
           <!-- Actions Taken -->
-          <div class="form-group">
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && !isStep5ActionsValid }">
             <label class="form-label">Apa yang kamu lakukan ketika merasakan Back Pain? (bisa memilih lebih dari satu) <span class="required">*</span></label>
             <div class="checkbox-grid">
               <label class="checkbox-row" :class="{ checked: form.pain_actions.obat_bebas }">
@@ -426,6 +510,9 @@
                 />
               </div>
             </div>
+            <p v-if="showValidationErrors && !isStep5ActionsValid" class="error-message">
+              ⚠️ Silakan pilih setidaknya satu tindakan penanganan (serta isi rincian detail jika mencentang 'Lainnya').
+            </p>
           </div>
 
           <!-- Pain Severity (NRS Scale Slider) -->
@@ -459,10 +546,9 @@
             <button 
               type="button" 
               class="btn btn-primary" 
-              :disabled="!isStep5Valid || submitting" 
-              @click="submitSurvey"
+              @click="handleStep5Submit"
             >
-              {{ submitting ? 'Mengirim data...' : 'Kirim Kuesioner' }}
+              Kirim Kuesioner
             </button>
           </div>
         </div>
@@ -540,10 +626,27 @@
       </div>
     </div>
   </div>
+
+  <!-- Custom Confirmation Modal Overlay -->
+  <div v-if="showConfirmSubmitModal" class="confirm-modal-overlay animate-fade">
+    <div class="confirm-modal-card">
+      <div class="confirm-modal-icon">❓</div>
+      <h3>Konfirmasi Kirim Formulir</h3>
+      <p>Apakah semua data yang diisi sudah benar? Jika sudah, silakan kirim formulirnya.</p>
+      <div class="confirm-modal-actions">
+        <button type="button" class="btn btn-secondary" @click="showConfirmSubmitModal = false">
+          Periksa Kembali
+        </button>
+        <button type="button" class="btn btn-primary" :disabled="submitting" @click="confirmSubmit">
+          {{ submitting ? 'Mengirim...' : 'Ya, Kirim Sekarang' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import SignaturePad from '../components/SignaturePad.vue';
 import InteractiveSpine from '../components/InteractiveSpine.vue';
 
@@ -555,6 +658,8 @@ const API_BASE = window.location.hostname === 'localhost'
 const currentStep = ref(1);
 const isDisqualified = ref(false);
 const submitting = ref(false);
+const showValidationErrors = ref(false);
+const showConfirmSubmitModal = ref(false);
 
 const initialForm = {
   parent_name: '',
@@ -564,9 +669,12 @@ const initialForm = {
   student_signature: '',
   gender: null, // 1 = Laki-laki, 2 = Perempuan
   age: null, // 16, 17, 18, 99 (Lainnya)
+  custom_age: '',
   school: '',
   is_transfer: null, // 1 = Ya, 0 = Tidak
   transfer_duration: null,
+  transfer_years: '',
+  transfer_months: '',
   class_grade: null, // 1, 2, 3
   has_back_pain: null, // 1 = Ya, 0 = Tidak
   
@@ -622,35 +730,40 @@ const isStep3Valid = computed(() => {
                   form.value.is_transfer !== null;
   
   if (!basicOk) return false;
+  if (form.value.age === 99 && !form.value.custom_age) return false;
   if (form.value.is_transfer === 1) {
     return form.value.transfer_duration !== null && form.value.transfer_duration !== '';
   }
   return true;
 });
 
-const isStep5Valid = computed(() => {
-  // Must select a duration
-  if (form.value.pain_duration === null) return false;
-  
-  // Must select at least one cause (and fill conditional details if checked)
+const isStep5CausesValid = computed(() => {
   const causes = form.value.pain_causes;
   const hasCause = causes.cedera || causes.duduk_lama || causes.skoliosis || causes.tumor || causes.dokter_diagnosa || causes.lainnya;
   if (!hasCause) return false;
   if (causes.dokter_diagnosa && !causes.dokter_diagnosa_detail.trim()) return false;
   if (causes.lainnya && !causes.pain_causes_other_detail.trim()) return false;
+  return true;
+});
 
-  // Must select at least one area in the InteractiveSpine
+const isStep5AreasValid = computed(() => {
   const areas = form.value.pain_areas;
-  const hasArea = areas.leher || areas.dada || areas.pinggang;
-  if (!hasArea) return false;
+  return areas.leher || areas.dada || areas.pinggang;
+});
 
-  // Must select at least one action (and fill conditional details if checked)
+const isStep5ActionsValid = computed(() => {
   const actions = form.value.pain_actions;
   const hasAction = actions.obat_bebas || actions.dokter_tanpa_obat || actions.dokter_dengan_obat || actions.pijat || actions.chiropractor || actions.operasi || actions.lainnya;
   if (!hasAction) return false;
   if (actions.lainnya && !actions.action_lainnya_detail.trim()) return false;
-
   return true;
+});
+
+const isStep5Valid = computed(() => {
+  return form.value.pain_duration !== null &&
+         isStep5CausesValid.value &&
+         isStep5AreasValid.value &&
+         isStep5ActionsValid.value;
 });
 
 // SLIDER NRS COMPUTATIONS
@@ -672,24 +785,19 @@ const severityClass = computed(() => {
 
 // NAVIGATION
 const nextStep = () => {
+  showValidationErrors.value = false;
   if (currentStep.value < 5) currentStep.value++;
 };
 
 const prevStep = () => {
+  showValidationErrors.value = false;
   if (currentStep.value > 1) currentStep.value--;
 };
 
 // SCREENING (In Step 3 validation transition)
 const handleScreening = () => {
-  const age = parseInt(form.value.age, 10);
   const isTransfer = parseInt(form.value.is_transfer, 10);
   const transferDuration = parseFloat(form.value.transfer_duration);
-
-  // Exclude if Age is "Lainnya" (99)
-  if (age === 99) {
-    isDisqualified.value = true;
-    return;
-  }
 
   // Exclude if transfer student and duration < 0.5 years
   if (isTransfer === 1 && transferDuration < 0.5) {
@@ -697,19 +805,102 @@ const handleScreening = () => {
     return;
   }
 
-  // Pass screening
+  // Pass screening (including Age 99 which is no longer immediately disqualified)
   nextStep();
 };
 
 // STEP 4 BRANCHING FLOW
 const handleBackPainBranch = () => {
   if (form.value.has_back_pain === 0) {
-    // Save directly and skip Step 5
-    submitSurvey();
+    // Show confirmation modal instead of saving directly
+    showConfirmSubmitModal.value = true;
   } else {
     // Go to Step 5
     nextStep();
   }
+};
+
+// STEP-BY-STEP VALIDATION & TRANSITION HANDLERS
+const handleStep1Next = () => {
+  if (isStep1Valid.value) {
+    showValidationErrors.value = false;
+    nextStep();
+  } else {
+    showValidationErrors.value = true;
+    scrollToFirstError();
+  }
+};
+
+const handleStep2Next = () => {
+  if (isStep2Valid.value) {
+    showValidationErrors.value = false;
+    nextStep();
+  } else {
+    showValidationErrors.value = true;
+    scrollToFirstError();
+  }
+};
+
+const handleStep3Next = () => {
+  if (isStep3Valid.value) {
+    showValidationErrors.value = false;
+    handleScreening();
+  } else {
+    showValidationErrors.value = true;
+    scrollToFirstError();
+  }
+};
+
+const handleStep4Next = () => {
+  if (form.value.has_back_pain !== null) {
+    showValidationErrors.value = false;
+    handleBackPainBranch();
+  } else {
+    showValidationErrors.value = true;
+    scrollToFirstError();
+  }
+};
+
+const handleStep5Submit = () => {
+  if (isStep5Valid.value) {
+    showValidationErrors.value = false;
+    showConfirmSubmitModal.value = true;
+  } else {
+    showValidationErrors.value = true;
+    scrollToFirstError();
+  }
+};
+
+// Calculate transfer duration from Years & Months input fields
+const updateTransferDuration = () => {
+  const yStr = form.value.transfer_years;
+  const mStr = form.value.transfer_months;
+  
+  if ((yStr === '' || yStr === null || yStr === undefined) && 
+      (mStr === '' || mStr === null || mStr === undefined)) {
+    form.value.transfer_duration = null;
+    return;
+  }
+  
+  const y = parseInt(yStr, 10) || 0;
+  const m = parseInt(mStr, 10) || 0;
+  form.value.transfer_duration = y + (m / 12);
+};
+
+// Smooth scroll to the first element with validation error
+const scrollToFirstError = () => {
+  nextTick(() => {
+    const firstErrorEl = document.querySelector('.has-error');
+    if (firstErrorEl) {
+      firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+};
+
+// CONFIRMED SUBMISSION FROM MODAL
+const confirmSubmit = () => {
+  showConfirmSubmitModal.value = false;
+  submitSurvey();
 };
 
 // SUBMISSION API CALL
@@ -717,6 +908,11 @@ const submitSurvey = async () => {
   submitting.value = true;
   try {
     const payload = JSON.parse(JSON.stringify(form.value));
+    
+    // Map custom age if Lainnya is selected
+    if (payload.age === 99 && payload.custom_age) {
+      payload.age = parseInt(payload.custom_age, 10);
+    }
     
     const response = await fetch(`${API_BASE}/kuesioner`, {
       method: 'POST',
@@ -744,6 +940,8 @@ const submitSurvey = async () => {
 const submitDisqualified = async () => {
   submitting.value = true;
   try {
+    const resolvedAge = form.value.age === 99 ? parseInt(form.value.custom_age, 10) : form.value.age;
+    
     // Save partial answers for inclusion analysis
     const payload = {
       parent_name: form.value.parent_name,
@@ -752,7 +950,7 @@ const submitDisqualified = async () => {
       student_name: form.value.student_name,
       student_signature: form.value.student_signature,
       gender: form.value.gender,
-      age: form.value.age,
+      age: resolvedAge,
       school: form.value.school,
       is_transfer: form.value.is_transfer,
       transfer_duration: form.value.transfer_duration,
@@ -788,6 +986,8 @@ const resetForm = () => {
   form.value = JSON.parse(JSON.stringify(initialForm));
   currentStep.value = 1;
   isDisqualified.value = false;
+  showValidationErrors.value = false;
+  showConfirmSubmitModal.value = false;
 };
 </script>
 
@@ -1320,5 +1520,107 @@ const resetForm = () => {
   .conditional-input {
     padding-left: 0;
   }
+}
+
+/* Years/Months Duration Inputs */
+.duration-inputs {
+  display: flex;
+  gap: 16px;
+}
+
+.duration-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.duration-unit {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+/* Custom Confirmation Modal Overlay */
+.confirm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.confirm-modal-card {
+  background-color: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-2xl);
+  padding: 32px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+  border: 1px solid var(--border-color);
+}
+
+.confirm-modal-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.confirm-modal-card h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 12px;
+}
+
+.confirm-modal-card p {
+  color: #475569;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.confirm-modal-actions button {
+  flex: 1;
+  padding: 12px 20px;
+}
+
+/* Error messages and highlighted forms */
+.error-message {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin-top: 6px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.form-group.has-error {
+  border: 2px solid #ef4444 !important;
+  border-radius: var(--radius-md) !important;
+  padding: 16px !important;
+  background-color: #fef2f2 !important;
+  margin-bottom: 24px !important;
+  transition: all 0.3s ease;
+}
+
+.form-group.has-error :deep(.canvas-wrapper),
+.form-group.has-error :deep(.interactive-spine-container),
+.form-group.has-error :deep(.signature-container) {
+  border-color: #ef4444 !important;
 }
 </style>

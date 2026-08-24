@@ -14,14 +14,24 @@
       ></canvas>
     </div>
     <div class="signature-actions">
-      <button type="button" class="btn-clear" @click="clear">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
-          <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
-        </svg>
-        Bersihkan
-      </button>
-      <span v-if="isEmpty" class="sign-hint">Gunakan mouse atau sentuhan untuk tanda tangan</span>
+      <div class="actions-left">
+        <button type="button" class="btn-clear" @click="clear">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5Zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6Z"/>
+            <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1ZM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118ZM2.5 3h11V2h-11v1Z"/>
+          </svg>
+          Bersihkan
+        </button>
+        <button type="button" class="btn-upload" @click="triggerFileInput">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+            <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/>
+          </svg>
+          Unggah File TTD
+        </button>
+        <input type="file" ref="fileInput" style="display: none" accept="image/*" @change="onFileSelected" />
+      </div>
+      <span v-if="isEmpty" class="sign-hint">Gunakan mouse/sentuhan atau unggah file</span>
       <span v-else class="sign-ok">✓ Tanda tangan terekam</span>
     </div>
   </div>
@@ -177,6 +187,56 @@ const clear = () => {
   clearInternal();
   emit('update:modelValue', '');
 };
+
+const fileInput = ref(null);
+
+const triggerFileInput = () => {
+  if (fileInput.value) fileInput.value.click();
+};
+
+const onFileSelected = (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const dataUrl = event.target.result;
+    const img = new Image();
+    img.onload = () => {
+      clearInternal();
+      if (ctx && canvas.value) {
+        const rect = wrapper.value.getBoundingClientRect();
+        const canvasWidth = rect.width;
+        const canvasHeight = 160;
+        
+        const imgRatio = img.width / img.height;
+        const canvasRatio = canvasWidth / canvasHeight;
+        
+        let drawWidth = canvasWidth;
+        let drawHeight = canvasHeight;
+        let xOffset = 0;
+        let yOffset = 0;
+        
+        if (imgRatio > canvasRatio) {
+          drawWidth = canvasWidth;
+          drawHeight = canvasWidth / imgRatio;
+          yOffset = (canvasHeight - drawHeight) / 2;
+        } else {
+          drawHeight = canvasHeight;
+          drawWidth = canvasHeight * imgRatio;
+          xOffset = (canvasWidth - drawWidth) / 2;
+        }
+        
+        ctx.drawImage(img, xOffset, yOffset, drawWidth, drawHeight);
+        isEmpty.value = false;
+        emit('update:modelValue', dataUrl);
+      }
+    };
+    img.src = dataUrl;
+    if (fileInput.value) fileInput.value.value = '';
+  };
+  reader.readAsDataURL(file);
+};
 </script>
 
 <style scoped>
@@ -230,15 +290,43 @@ canvas {
   border-color: #94a3b8;
 }
 
+.actions-left {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: transparent;
+  border: 1px solid #cbd5e1;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-upload:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
 .sign-hint {
   font-size: 0.8rem;
   color: #94a3b8;
+  text-align: right;
 }
 
 .sign-ok {
   font-size: 0.85rem;
   color: #10b981;
   font-weight: 600;
+  text-align: right;
 }
 
 .required {
