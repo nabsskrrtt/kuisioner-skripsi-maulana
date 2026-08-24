@@ -894,10 +894,24 @@
                     <td>{{ res.id }}</td>
                     <td class="col-name">{{ res.student_name }}</td>
                     <td>{{ res.gender === 1 ? 'Laki-laki' : 'Perempuan' }}</td>
-                    <td>{{ res.age === 99 ? 'Lainnya' : res.age }}</td>
+                    <td>
+                      <span v-if="res.is_eligible === 0 && res.age !== 16 && res.age !== 17 && res.age !== 18" class="badge badge-red-highlight" title="Tereliminasi karena usia di luar target 16-18 tahun">
+                        {{ res.age === 99 ? 'Lainnya' : res.age }}
+                      </span>
+                      <span v-else>
+                        {{ res.age === 99 ? 'Lainnya' : res.age }}
+                      </span>
+                    </td>
                     <td>{{ res.school }}</td>
                     <td>Kelas {{ res.class_grade + 9 }}</td>
-                    <td>{{ res.is_transfer === 1 ? `Ya (${res.transfer_duration}th)` : 'Tidak' }}</td>
+                    <td>
+                      <span v-if="res.is_eligible === 0 && res.is_transfer === 1 && (res.transfer_duration === null || res.transfer_duration < 0.5)" class="badge badge-red-highlight" title="Tereliminasi karena lama bersekolah siswa pindahan < 6 bulan">
+                        Ya ({{ res.transfer_duration !== null ? res.transfer_duration : 0 }}th)
+                      </span>
+                      <span v-else>
+                        {{ res.is_transfer === 1 ? `Ya (${res.transfer_duration}th)` : 'Tidak' }}
+                      </span>
+                    </td>
                     <td>
                       <span v-if="res.has_back_pain === 1" class="badge badge-red">Ya</span>
                       <span v-else-if="res.has_back_pain === 0" class="badge badge-green">Tidak</span>
@@ -1405,6 +1419,12 @@ onMounted(() => {
 .badge-red {
   background-color: var(--pastel-red);
   color: var(--pastel-red-accent);
+}
+
+.badge-red-highlight {
+  background-color: #fee2e2;
+  color: #ef4444;
+  border: 1px solid #fca5a5;
 }
 
 .badge-green {
