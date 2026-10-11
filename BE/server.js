@@ -239,8 +239,8 @@ app.get('/api/admin/responses', authenticateToken, async (req, res) => {
     }
 
     if (searchQuery) {
-      conditions.push('(student_name LIKE ? OR school LIKE ?)');
-      params.push(`%${searchQuery}%`, `%${searchQuery}%`);
+      conditions.push('(student_name LIKE ? OR parent_name LIKE ? OR parent_student_name LIKE ? OR school LIKE ?)');
+      params.push(`%${searchQuery}%`, `%${searchQuery}%`, `%${searchQuery}%`, `%${searchQuery}%`);
     }
 
     if (conditions.length > 0) {

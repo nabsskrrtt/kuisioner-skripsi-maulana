@@ -13,8 +13,10 @@ function exportResponsesToExcel(rows) {
       "ID Responden": row.id,
       "Nama Orang Tua / Wali": row.parent_name,
       "Nama Anak (Ortu)": row.parent_student_name,
+      "Status TTD Orang Tua": row.parent_signature ? 'Sudah Tanda Tangan' : 'Belum Tanda Tangan',
       "Tanda Tangan Orang Tua (Base64)": row.parent_signature ? row.parent_signature.substring(0, 100) + '... [TRUNCATED]' : '',
       "Nama Lengkap Siswa": row.student_name,
+      "Status TTD Siswa": row.student_signature ? 'Sudah Tanda Tangan' : 'Belum Tanda Tangan',
       "Tanda Tangan Siswa (Base64)": row.student_signature ? row.student_signature.substring(0, 100) + '... [TRUNCATED]' : '',
       "Jenis Kelamin (Gender)": row.gender, // 1 = Laki-laki, 2 = Perempuan
       "Umur (Age)": row.age,

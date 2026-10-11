@@ -845,7 +845,7 @@
                 type="text" 
                 v-model="searchQuery" 
                 class="form-control form-control-sm" 
-                placeholder="Cari nama siswa atau SMA..."
+                placeholder="Cari nama siswa, orang tua, atau SMA..."
                 @input="debouncedFetchResponses"
               />
             </div>
@@ -867,6 +867,15 @@
             </button>
           </div>
 
+          <!-- Signature Status Summary Bar -->
+          <div class="sig-summary-bar">
+            <span>📝 <strong>Keterangan Tanda Tangan:</strong></span>
+            <span class="badge badge-green">Lengkap (Ortu & Siswa): {{ sigStats.both }}</span>
+            <span v-if="sigStats.parentOnly > 0" class="badge badge-yellow">Hanya Ortu: {{ sigStats.parentOnly }}</span>
+            <span v-if="sigStats.studentOnly > 0" class="badge badge-yellow">Hanya Siswa: {{ sigStats.studentOnly }}</span>
+            <span v-if="sigStats.none > 0" class="badge badge-red">Belum Ada TTD: {{ sigStats.none }}</span>
+          </div>
+
           <!-- RESPONDENTS DATA GRID -->
           <div class="table-card data-grid-card">
             <div v-if="responses.length === 0" class="empty-grid">
@@ -878,6 +887,7 @@
                   <tr>
                     <th>ID</th>
                     <th>Nama Siswa</th>
+                    <th>Nama Ortu / Wali</th>
                     <th>Gender</th>
                     <th>Umur</th>
                     <th>SMA</th>
@@ -886,13 +896,22 @@
                     <th>Back Pain?</th>
                     <th>NRS</th>
                     <th>Skrining</th>
+                    <th>Status Tanda Tangan</th>
                     <th>Waktu Masuk</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="res in responses" :key="res.id" :class="{ 'row-disqualified': res.is_eligible === 0 }">
                     <td>{{ res.id }}</td>
-                    <td class="col-name">{{ res.student_name }}</td>
+                    <td class="col-name">
+                      <strong>{{ res.student_name }}</strong>
+                    </td>
+                    <td class="col-name">
+                      <div>{{ res.parent_name || '-' }}</div>
+                      <small v-if="res.parent_student_name && res.parent_student_name !== res.student_name" class="sub-name" title="Nama anak di lembar orang tua">
+                        (Anak: {{ res.parent_student_name }})
+                      </small>
+                    </td>
                     <td>{{ res.gender === 1 ? 'Laki-laki' : 'Perempuan' }}</td>
                     <td>
                       <span v-if="res.is_eligible === 0 && res.age !== 16 && res.age !== 17 && res.age !== 18" class="badge badge-red-highlight" title="Tereliminasi karena usia di luar target 16-18 tahun">
@@ -922,12 +941,123 @@
                       <span v-if="res.is_eligible === 1" class="badge badge-green">Lolos</span>
                       <span v-else class="badge badge-red">Eliminasi</span>
                     </td>
+                    <td>
+                      <div class="sig-status-cell">
+                        <div class="sig-pills">
+                          <span 
+                            class="sig-pill" 
+                            :class="res.parent_signature ? 'sig-pill-yes' : 'sig-pill-no'"
+                            :title="res.parent_signature ? 'Tanda tangan orang tua tersedia' : 'Belum ada tanda tangan orang tua'"
+                          >
+                            Ortu: {{ res.parent_signature ? '✓ Ada' : '✗ Belum' }}
+                          </span>
+                          <span 
+                            class="sig-pill" 
+                            :class="res.student_signature ? 'sig-pill-yes' : 'sig-pill-no'"
+                            :title="res.student_signature ? 'Tanda tangan siswa tersedia' : 'Belum ada tanda tangan siswa'"
+                          >
+                            Siswa: {{ res.student_signature ? '✓ Ada' : '✗ Belum' }}
+                          </span>
+                        </div>
+                        <button 
+                          v-if="res.parent_signature || res.student_signature"
+                          @click="openSignatureModal(res)" 
+                          class="btn-sig-action"
+                          title="Buka pratinjau tanda tangan digital"
+                        >
+                          👁️ Lihat TTD
+                        </button>
+                      </div>
+                    </td>
                     <td class="col-date">{{ formatDate(res.created_at) }}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL PREVIEW TANDA TANGAN DIGITAL -->
+    <div v-if="selectedSigRespondent" class="sig-modal-backdrop" @click.self="closeSignatureModal">
+      <div class="sig-modal-box animate-fade">
+        <div class="sig-modal-header">
+          <div class="sig-modal-title-group">
+            <h3>✍️ Pratinjau Tanda Tangan Digital</h3>
+            <p>Responden #{{ selectedSigRespondent.id }} &bull; {{ selectedSigRespondent.student_name }} &bull; {{ selectedSigRespondent.school }}</p>
+          </div>
+          <button class="sig-modal-close-btn" @click="closeSignatureModal" title="Tutup">&times;</button>
+        </div>
+
+        <div class="sig-modal-body">
+          <!-- Card TTD Orang Tua -->
+          <div class="sig-preview-card">
+            <div class="sig-preview-header">
+              <span class="sig-badge or-badge">Informed Consent</span>
+              <h4>Tanda Tangan Orang Tua / Wali</h4>
+              <div class="sig-meta">
+                <div>Nama Ortu: <strong>{{ selectedSigRespondent.parent_name || '-' }}</strong></div>
+                <div>Nama Anak: <strong>{{ selectedSigRespondent.parent_student_name || '-' }}</strong></div>
+              </div>
+            </div>
+            <div class="sig-canvas-display">
+              <img 
+                v-if="selectedSigRespondent.parent_signature" 
+                :src="selectedSigRespondent.parent_signature" 
+                alt="Tanda Tangan Orang Tua" 
+              />
+              <div v-else class="sig-empty-notice">Tidak ada tanda tangan</div>
+            </div>
+            <div class="sig-preview-footer">
+              <button 
+                v-if="selectedSigRespondent.parent_signature" 
+                @click="downloadSignature(selectedSigRespondent.parent_signature, `TTD_Ortu_Responden_${selectedSigRespondent.id}_${selectedSigRespondent.student_name}.png`)" 
+                class="btn btn-secondary btn-sm"
+              >
+                💾 Unduh PNG
+              </button>
+            </div>
+          </div>
+
+          <!-- Card TTD Siswa -->
+          <div class="sig-preview-card">
+            <div class="sig-preview-header">
+              <span class="sig-badge siswa-badge">Informed Assent</span>
+              <h4>Tanda Tangan Siswa (Responden)</h4>
+              <div class="sig-meta">
+                <div>Nama Siswa: <strong>{{ selectedSigRespondent.student_name || '-' }}</strong></div>
+                <div>Usia & Kelas: <strong>{{ selectedSigRespondent.age }} Thn &bull; Kelas {{ selectedSigRespondent.class_grade + 9 }}</strong></div>
+              </div>
+            </div>
+            <div class="sig-canvas-display">
+              <img 
+                v-if="selectedSigRespondent.student_signature" 
+                :src="selectedSigRespondent.student_signature" 
+                alt="Tanda Tangan Siswa" 
+              />
+              <div v-else class="sig-empty-notice">Tidak ada tanda tangan</div>
+            </div>
+            <div class="sig-preview-footer">
+              <button 
+                v-if="selectedSigRespondent.student_signature" 
+                @click="downloadSignature(selectedSigRespondent.student_signature, `TTD_Siswa_Responden_${selectedSigRespondent.id}_${selectedSigRespondent.student_name}.png`)" 
+                class="btn btn-secondary btn-sm"
+              >
+                💾 Unduh PNG
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sig-modal-footer">
+          <button 
+            @click="printConsentSheet(selectedSigRespondent)" 
+            class="btn btn-secondary btn-sm"
+          >
+            🖨️ Cetak / Print Lembar Persetujuan
+          </button>
+          <button @click="closeSignatureModal" class="btn btn-primary btn-sm">Tutup</button>
         </div>
       </div>
     </div>
@@ -955,6 +1085,17 @@ const responses = ref([]);
 const searchQuery = ref('');
 const filterEligible = ref('1');
 const exporting = ref(false);
+const selectedSigRespondent = ref(null);
+
+// Signature statistics across loaded responses
+const sigStats = computed(() => {
+  const total = responses.value.length;
+  const both = responses.value.filter(r => r.parent_signature && r.student_signature).length;
+  const parentOnly = responses.value.filter(r => r.parent_signature && !r.student_signature).length;
+  const studentOnly = responses.value.filter(r => !r.parent_signature && r.student_signature).length;
+  const none = responses.value.filter(r => !r.parent_signature && !r.student_signature).length;
+  return { total, both, parentOnly, studentOnly, none };
+});
 
 const dashboardStats = ref(null);
 const loadingDashboard = ref(true);
@@ -1237,6 +1378,93 @@ const downloadCSV = () => {
   setTimeout(() => {
     exporting.value = false;
   }, 1000);
+};
+
+// Signature Modal Handlers
+const openSignatureModal = (res) => {
+  selectedSigRespondent.value = res;
+};
+
+const closeSignatureModal = () => {
+  selectedSigRespondent.value = null;
+};
+
+const downloadSignature = (dataUrl, filename) => {
+  if (!dataUrl) return;
+  const link = document.createElement('a');
+  link.href = dataUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+const printConsentSheet = (res) => {
+  if (!res) return;
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) return;
+  
+  const createdDate = res.created_at ? new Date(res.created_at).toLocaleString('id-ID') : '-';
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Lembar Persetujuan - Responden #${res.id}</title>
+      <style>
+        body { font-family: 'Times New Roman', Times, serif; padding: 40px; color: #111; line-height: 1.6; }
+        .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 12px; margin-bottom: 24px; }
+        .header h2 { margin: 0; font-size: 15pt; font-weight: bold; text-transform: uppercase; }
+        .header p { margin: 4px 0 0; font-size: 11pt; }
+        .doc-title { text-align: center; font-size: 13pt; font-weight: bold; margin: 20px 0; text-decoration: underline; }
+        .info-table { width: 100%; border-collapse: collapse; margin-bottom: 28px; font-size: 11pt; }
+        .info-table td { padding: 6px 4px; vertical-align: top; }
+        .info-table td:first-child { width: 230px; font-weight: bold; }
+        .sig-grid { display: flex; justify-content: space-between; margin-top: 36px; gap: 24px; }
+        .sig-box { width: 48%; text-align: center; border: 1px solid #ccc; padding: 16px; border-radius: 6px; }
+        .sig-box h4 { margin: 0 0 12px; font-size: 11pt; font-weight: bold; }
+        .sig-img { max-height: 130px; max-width: 100%; object-fit: contain; }
+        .sig-name { margin-top: 14px; font-weight: bold; border-top: 1px solid #333; padding-top: 8px; font-size: 11pt; }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h2>Fakultas Kedokteran Universitas Indonesia</h2>
+        <p>Penelitian Skripsi: Prevalensi Back Pain pada Remaja SMA dan Faktor Penyebabnya</p>
+        <p>Peneliti: Maulana Yusuf Angkasa &bull; Pembimbing: Dr. dr. Mohamad Saekhu, Sp.BS</p>
+      </div>
+
+      <div class="doc-title">LEMBAR PERSETUJUAN PENELITIAN (INFORMED CONSENT & ASSENT)</div>
+      
+      <table class="info-table">
+        <tr><td>Nomor Responden</td><td>: #${res.id}</td></tr>
+        <tr><td>Nama Lengkap Siswa</td><td>: ${res.student_name || '-'}</td></tr>
+        <tr><td>Sekolah / Kelas</td><td>: ${res.school || '-'} / Kelas ${res.class_grade ? res.class_grade + 9 : '-'}</td></tr>
+        <tr><td>Usia / Jenis Kelamin</td><td>: ${res.age || '-'} Tahun / ${res.gender === 1 ? 'Laki-laki' : 'Perempuan'}</td></tr>
+        <tr><td>Nama Orang Tua / Wali</td><td>: ${res.parent_name || '-'}</td></tr>
+        <tr><td>Waktu Pengisian Kuesioner</td><td>: ${createdDate}</td></tr>
+      </table>
+
+      <div class="sig-grid">
+        <div class="sig-box">
+          <h4>Informed Consent (Orang Tua / Wali)</h4>
+          ${res.parent_signature ? `<img src="${res.parent_signature}" class="sig-img" alt="TTD Ortu" />` : '<p style="color:#888;">(Tidak ada tanda tangan)</p>'}
+          <div class="sig-name">${res.parent_name || '(Nama Orang Tua/Wali)'}</div>
+        </div>
+        <div class="sig-box">
+          <h4>Informed Assent (Siswa Responden)</h4>
+          ${res.student_signature ? `<img src="${res.student_signature}" class="sig-img" alt="TTD Siswa" />` : '<p style="color:#888;">(Tidak ada tanda tangan)</p>'}
+          <div class="sig-name">${res.student_name || '(Nama Siswa)'}</div>
+        </div>
+      </div>
+      <script>
+        window.onload = function() { window.print(); };
+      <\/script>
+    </body>
+    </html>
+  `;
+
+  printWindow.document.write(html);
+  printWindow.document.close();
 };
 
 // Logout handler
@@ -2007,5 +2235,271 @@ onMounted(() => {
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
   font-weight: 500;
+}
+
+/* Action button for signature preview */
+.btn-sig-action {
+  background-color: var(--sky-blue-light);
+  color: var(--sky-blue-hover);
+  border: 1px solid #bfdbfe;
+  padding: 5px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: var(--transition-smooth);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-sig-action:hover {
+  background-color: var(--sky-blue);
+  color: #ffffff;
+  border-color: var(--sky-blue);
+}
+
+/* Signature Preview Modal Styles */
+.sig-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.sig-modal-box {
+  background-color: #ffffff;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-width: 840px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalScale 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalScale {
+  from { opacity: 0; transform: scale(0.96) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.sig-modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fafbfc;
+}
+
+.sig-modal-title-group h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 3px;
+}
+
+.sig-modal-title-group p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.sig-modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.6rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition-smooth);
+}
+
+.sig-modal-close-btn:hover {
+  background-color: #f1f5f9;
+  color: var(--text-dark);
+}
+
+.sig-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .sig-modal-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sig-preview-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sig-preview-header {
+  padding: 14px 16px;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sig-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+
+.or-badge {
+  background-color: #e0f2fe;
+  color: #0284c7;
+}
+
+.siswa-badge {
+  background-color: #f0fdf4;
+  color: #16a34a;
+}
+
+.sig-preview-header h4 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+
+.sig-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sig-meta strong {
+  color: var(--text-dark);
+}
+
+.sig-canvas-display {
+  padding: 16px;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sig-canvas-display img {
+  max-width: 100%;
+  max-height: 140px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.06));
+}
+
+.sig-empty-notice {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.sig-preview-footer {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: flex-end;
+  background-color: #f8fafc;
+}
+
+.sig-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fafbfc;
+}
+
+/* Signature Status Summary Bar & Pills */
+.sig-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow-sm);
+}
+
+.badge-yellow {
+  background-color: var(--pastel-yellow);
+  color: var(--pastel-yellow-accent);
+  border: 1px solid #fff59d;
+}
+
+.sub-name {
+  display: block;
+  font-size: 0.73rem;
+  color: var(--text-muted);
+  line-height: 1.2;
+  margin-top: 2px;
+}
+
+.sig-status-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.sig-pills {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.sig-pill {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.sig-pill-yes {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.sig-pill-no {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #ffcdd2;
 }
 </style>

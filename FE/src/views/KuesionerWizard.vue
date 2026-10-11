@@ -23,7 +23,7 @@
         <ul>
           <li v-if="parseInt(form.age) === 99">Usia Anda saat ini tidak masuk dalam kriteria inklusi (wajib berumur 16, 17, atau 18 tahun).</li>
           <li v-if="parseInt(form.is_transfer) === 1 && parseFloat(form.transfer_duration) < 0.5">
-            Lama sekolah Anda saat ini kurang dari 6 bulan (0,5 tahun). Sesuai etika penelitian, responden siswa pindahan wajib bersekolah &ge; 6 bulan.
+            Lama sekolah anda di tempat sekolah yang sekarang kurang dari 6 bulan. Hal tersebut tidak sesuai kriteria yang diinginkan oleh peneliti. Responden yang merupakan siswa pindahan wajib bersekolah di tempat pindahan &ge; 6 bulan.
           </li>
         </ul>
       </div>
@@ -322,7 +322,6 @@
             <p v-if="showValidationErrors && form.is_transfer === 1 && (form.transfer_duration === null || form.transfer_duration === '')" class="error-message">
               ⚠️ Silakan isi lama bersekolah Anda (tahun dan/atau bulan).
             </p>
-            <p class="input-tip">Minimal bersekolah selama 6 bulan (atau 0.5 tahun) agar lolos kriteria inklusi penelitian.</p>
           </div>
 
           <div class="btn-group">
