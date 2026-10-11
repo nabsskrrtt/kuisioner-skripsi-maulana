@@ -589,7 +589,7 @@
             <p class="profile-school">Program Pendidikan Dokter</p>
             <p class="profile-univ">Fakultas Kedokteran Univ. Indonesia</p>
             <a 
-              href="/Resume-M-Yusuf-Maulana-Angkasa.pdf" 
+              href="https://drive.google.com/file/d/1okHFnCaDrJTFB_V1CZ_vVD76BMN7SgO3/view?usp=sharing" 
               target="_blank" 
               class="btn-cv"
             >
