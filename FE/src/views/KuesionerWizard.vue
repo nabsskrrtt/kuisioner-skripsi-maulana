@@ -608,7 +608,7 @@
             <p class="profile-school">Program Pendidikan Dokter</p>
             <p class="profile-univ">Fakultas Kedokteran Univ. Indonesia</p>
             <a 
-              href="https://drive.google.com/file/d/1okHFnCaDrJTFB_V1CZ_vVD76BMN7SgO3/view?usp=sharing" 
+              href="https://drive.google.com/file/d/1-DoYbbnvLJO8iJTimOCiGrydkQpPsDId/view?usp=sharing" 
               target="_blank" 
               class="btn-cv"
             >
