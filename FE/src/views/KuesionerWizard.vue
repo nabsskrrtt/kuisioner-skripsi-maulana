@@ -681,15 +681,15 @@ const showValidationErrors = ref(false);
 const showConfirmSubmitModal = ref(false);
 
 const schoolOptions = [
+  'SMA Negeri 8 Jakarta',
+  'SMA Negeri 68 Jakarta',
   'SMA Fons Vitae 1 Jakarta',
   'SMA Kolese Kanisius Jakarta',
   'SMA Muhammadiyah 1 Jakarta',
   'SMA Muhammadiyah 12 Jakarta',
   'SMA Negeri 4 Jakarta',
-  'SMA Negeri 8 Jakarta',
   'SMA Negeri 27 Jakarta',
   'SMA Negeri 31 Jakarta',
-  'SMA Negeri 68 Jakarta',
   'SMA Negeri 79 Jakarta',
   'SMK ASPI Jakarta',
   'SMK Muhammadiyah 6 Jakarta',
