@@ -693,6 +693,7 @@ const schoolOptions = [
   'SMA Negeri 79 Jakarta',
   'SMK ASPI Jakarta',
   'SMK Muhammadiyah 6 Jakarta',
+  "SMA Islam As-Syafi'iyah",
   'SMK Negeri 2 Jakarta',
   'SMK Negeri 14 Jakarta',
   'SMK Negeri 16 Jakarta',
