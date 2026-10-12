@@ -268,7 +268,6 @@
               v-model="form.custom_school" 
               placeholder="Contoh: SMA Negeri 1 Jakarta"
             />
-            <p class="input-tip">Tulis nama resmi sekolah secara jelas, bukan singkatan gaul.</p>
             <p v-if="showValidationErrors && form.school === 'OTHER' && !form.custom_school.trim()" class="error-message">
               ⚠️ Silakan isi nama sekolah Anda.
             </p>
