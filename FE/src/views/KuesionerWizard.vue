@@ -238,19 +238,39 @@
             </p>
           </div>
 
-          <!-- School Name -->
-          <div class="form-group" :class="{ 'has-error': showValidationErrors && !form.school.trim() }">
-            <label class="form-label" for="school">Nama Sekolah SMA <span class="required">*</span></label>
-            <input 
-              type="text" 
+          <!-- School Selection (Dropdown) -->
+          <div class="form-group" :class="{ 'has-error': showValidationErrors && !isSchoolValid }">
+            <label class="form-label" for="school">Asal Sekolah <span class="required">*</span></label>
+            <select 
               id="school" 
               class="form-control" 
-              v-model="form.school" 
-              placeholder="Contoh: SMAN 8 Jakarta"
+              v-model="form.school"
+            >
+              <option value="" disabled>-- Pilih Asal Sekolah --</option>
+              <option v-for="sch in schoolOptions" :key="sch" :value="sch">
+                {{ sch }}
+              </option>
+              <option value="OTHER">Lainnya / Tidak Ada di Daftar (Isi Manual)</option>
+            </select>
+            <p class="input-tip">Pilih asal sekolah Anda dari daftar di atas. Jika tidak tercantum, pilih "Lainnya" untuk mengisi secara manual.</p>
+            <p v-if="showValidationErrors && !form.school" class="error-message">
+              ⚠️ Silakan pilih asal sekolah Anda dari daftar.
+            </p>
+          </div>
+
+          <!-- Custom School Name (if Lainnya is selected) -->
+          <div v-if="form.school === 'OTHER'" class="form-group animate-fade" :class="{ 'has-error': showValidationErrors && form.school === 'OTHER' && !form.custom_school.trim() }">
+            <label class="form-label" for="custom_school">Nama Sekolah Lainnya <span class="required">*</span></label>
+            <input 
+              type="text" 
+              id="custom_school" 
+              class="form-control" 
+              v-model="form.custom_school" 
+              placeholder="Contoh: SMA Negeri 1 Jakarta"
             />
-            <p class="input-tip">Tulis nama resmi SMA secara jelas, bukan singkatan gaul. Contoh: SMAN 8 Jakarta (BENAR), Smandel (SALAH).</p>
-            <p v-if="showValidationErrors && !form.school.trim()" class="error-message">
-              ⚠️ Silakan isi nama sekolah SMA Anda.
+            <p class="input-tip">Tulis nama resmi sekolah secara jelas, bukan singkatan gaul.</p>
+            <p v-if="showValidationErrors && form.school === 'OTHER' && !form.custom_school.trim()" class="error-message">
+              ⚠️ Silakan isi nama sekolah Anda.
             </p>
           </div>
 
@@ -660,6 +680,26 @@ const submitting = ref(false);
 const showValidationErrors = ref(false);
 const showConfirmSubmitModal = ref(false);
 
+const schoolOptions = [
+  'SMA Fons Vitae 1 Jakarta',
+  'SMA Kolese Kanisius Jakarta',
+  'SMA Muhammadiyah 1 Jakarta',
+  'SMA Muhammadiyah 12 Jakarta',
+  'SMA Negeri 4 Jakarta',
+  'SMA Negeri 8 Jakarta',
+  'SMA Negeri 27 Jakarta',
+  'SMA Negeri 31 Jakarta',
+  'SMA Negeri 68 Jakarta',
+  'SMA Negeri 79 Jakarta',
+  'SMK ASPI Jakarta',
+  'SMK Muhammadiyah 6 Jakarta',
+  'SMK Negeri 2 Jakarta',
+  'SMK Negeri 14 Jakarta',
+  'SMK Negeri 16 Jakarta',
+  'SMK Negeri 31 Jakarta',
+  'SMK Negeri 40 Jakarta'
+];
+
 const initialForm = {
   parent_name: '',
   parent_student_name: '',
@@ -670,6 +710,7 @@ const initialForm = {
   age: null, // 16, 17, 18, 99 (Lainnya)
   custom_age: '',
   school: '',
+  custom_school: '',
   is_transfer: null, // 1 = Ya, 0 = Tidak
   transfer_duration: null,
   transfer_years: '',
@@ -721,10 +762,18 @@ const isStep2Valid = computed(() => {
          form.value.student_signature !== '';
 });
 
+const isSchoolValid = computed(() => {
+  if (!form.value.school || form.value.school.trim() === '') return false;
+  if (form.value.school === 'OTHER') {
+    return !!(form.value.custom_school && form.value.custom_school.trim() !== '');
+  }
+  return true;
+});
+
 const isStep3Valid = computed(() => {
   const basicOk = form.value.gender !== null &&
                   form.value.age !== null &&
-                  form.value.school.trim() !== '' &&
+                  isSchoolValid.value &&
                   form.value.class_grade !== null &&
                   form.value.is_transfer !== null;
   
@@ -912,6 +961,11 @@ const submitSurvey = async () => {
     if (payload.age === 99 && payload.custom_age) {
       payload.age = parseInt(payload.custom_age, 10);
     }
+
+    // Map custom school if Lainnya is selected
+    if (payload.school === 'OTHER') {
+      payload.school = payload.custom_school ? payload.custom_school.trim() : '';
+    }
     
     const response = await fetch(`${API_BASE}/kuesioner`, {
       method: 'POST',
@@ -940,6 +994,9 @@ const submitDisqualified = async () => {
   submitting.value = true;
   try {
     const resolvedAge = form.value.age === 99 ? parseInt(form.value.custom_age, 10) : form.value.age;
+    const resolvedSchool = form.value.school === 'OTHER' 
+      ? (form.value.custom_school ? form.value.custom_school.trim() : '') 
+      : form.value.school;
     
     // Save partial answers for inclusion analysis
     const payload = {
@@ -950,7 +1007,7 @@ const submitDisqualified = async () => {
       student_signature: form.value.student_signature,
       gender: form.value.gender,
       age: resolvedAge,
-      school: form.value.school,
+      school: resolvedSchool,
       is_transfer: form.value.is_transfer,
       transfer_duration: form.value.transfer_duration,
       class_grade: form.value.class_grade,
